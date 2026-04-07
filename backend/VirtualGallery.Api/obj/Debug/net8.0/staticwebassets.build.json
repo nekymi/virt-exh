@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "bh1hOBCF7hxtQWvJaa0otOxaJDsTHupCgvrFYcOjJug=",
+  "Source": "VirtualGallery.Api",
+  "BasePath": "_content/VirtualGallery.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
