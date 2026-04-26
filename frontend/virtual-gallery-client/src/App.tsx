@@ -12,6 +12,7 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { SubmitArtworkPage } from "./pages/SubmitArtworkPage";
 import { VirtualRoomPage } from "./pages/VirtualRoomPage";
+import { EditSubmissionPage } from "./pages/EditSubmissionPage";
 
 export default function App() {
   return (
@@ -26,7 +27,7 @@ export default function App() {
             <Route path="/exhibitions/:id/virtual-room" element={<VirtualRoomPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-
+            <Route path="/submissions/:id/edit" element={<EditSubmissionPage />} />
             <Route
               path="/profile"
               element={

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { exhibitionsApi } from "../api/exhibitionsApi";
 import { submissionsApi } from "../api/submissionsApi";
+import { uploadsApi } from "../api/uploadsApi";
 import type { Exhibition } from "../types/exhibition";
 
 export function SubmitArtworkPage() {
@@ -11,7 +12,8 @@ export function SubmitArtworkPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [year, setYear] = useState(new Date().getFullYear());
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [exhibitionId, setExhibitionId] = useState("");
   const [tags, setTags] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,8 +24,13 @@ export function SubmitArtworkPage() {
     const load = async () => {
       try {
         setPageLoading(true);
+        setError("");
+
         const data = await exhibitionsApi.getAll();
-        const allowed = data.filter((item) => item.status === "Приём заявок открыт");
+        const allowed = data.filter(
+          (item) => item.status === "Приём заявок открыт"
+        );
+
         setExhibitions(allowed);
 
         if (allowed.length > 0) {
@@ -42,15 +49,28 @@ export function SubmitArtworkPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!imageFile) {
+      setError("Выберите изображение.");
+      return;
+    }
+
+    if (!exhibitionId) {
+      setError("Выберите выставку.");
+      return;
+    }
+
     try {
       setLoading(true);
+      setUploadingImage(true);
       setError("");
+
+      const uploaded = await uploadsApi.uploadImage(imageFile);
 
       await submissionsApi.create({
         title,
         description,
         year,
-        imageUrl,
+        imageUrl: uploaded.url,
         exhibitionId,
         tags: tags
           .split(",")
@@ -62,6 +82,7 @@ export function SubmitArtworkPage() {
     } catch {
       setError("Не удалось отправить работу.");
     } finally {
+      setUploadingImage(false);
       setLoading(false);
     }
   };
@@ -117,10 +138,9 @@ export function SubmitArtworkPage() {
             />
 
             <input
-              type="url"
-              placeholder="Ссылка на изображение"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
               required
             />
 
@@ -133,8 +153,12 @@ export function SubmitArtworkPage() {
 
             {error && <p className="error-text">{error}</p>}
 
-            <button type="submit" disabled={loading}>
-              {loading ? "Отправка..." : "Отправить заявку"}
+            <button type="submit" disabled={loading || uploadingImage}>
+              {uploadingImage
+                ? "Загрузка изображения..."
+                : loading
+                ? "Отправка..."
+                : "Отправить заявку"}
             </button>
           </>
         )}

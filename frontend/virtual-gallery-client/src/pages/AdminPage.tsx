@@ -1,14 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { adminArtworksApi } from "../api/adminArtworksApi";
-import { exhibitionsApi, type CreateExhibitionRequest } from "../api/exhibitionsApi";
+import {
+  exhibitionsApi,
+  type CreateExhibitionRequest,
+} from "../api/exhibitionsApi";
 import { submissionsApi } from "../api/submissionsApi";
 import type { Artwork } from "../types/artwork";
 import type { Submission } from "../types/submission";
+import type { Exhibition } from "../types/exhibition";
 import { formatDate } from "../utils/formatDate";
 
 export function AdminPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [artworks, setArtworks] = useState<Artwork[]>([]);
+  const [exhibitions, setExhibitions] = useState<Exhibition[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [title, setTitle] = useState("");
@@ -20,15 +25,31 @@ export function AdminPage() {
   const [endDate, setEndDate] = useState("");
   const [createError, setCreateError] = useState("");
 
+  const [editingExhibitionId, setEditingExhibitionId] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editTheme, setEditTheme] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editSubmissionStartDate, setEditSubmissionStartDate] = useState("");
+  const [editSubmissionEndDate, setEditSubmissionEndDate] = useState("");
+  const [editStartDate, setEditStartDate] = useState("");
+  const [editEndDate, setEditEndDate] = useState("");
+  const [editError, setEditError] = useState("");
+
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [submissionsData, artworksData] = await Promise.all([
-        submissionsApi.getAll(),
-        adminArtworksApi.getAll(),
-      ]);
+
+      const [submissionsData, artworksData, exhibitionsData] = await Promise.all(
+        [
+          submissionsApi.getAll(),
+          adminArtworksApi.getAll(),
+          exhibitionsApi.getAll(),
+        ]
+      );
+
       setSubmissions(submissionsData);
       setArtworks(artworksData);
+      setExhibitions(exhibitionsData);
     } finally {
       setLoading(false);
     }
@@ -50,6 +71,7 @@ export function AdminPage() {
         approve,
         adminComment: adminComment ?? "",
       });
+
       await loadData();
     } catch {
       alert("Не удалось обработать заявку.");
@@ -102,9 +124,49 @@ export function AdminPage() {
     }
   };
 
+  const startEditExhibition = (exhibition: Exhibition) => {
+    setEditingExhibitionId(exhibition.id);
+    setEditTitle(exhibition.title);
+    setEditTheme(exhibition.theme);
+    setEditDescription(exhibition.description);
+    setEditSubmissionStartDate(exhibition.submissionStartDate.slice(0, 16));
+    setEditSubmissionEndDate(exhibition.submissionEndDate.slice(0, 16));
+    setEditStartDate(exhibition.startDate.slice(0, 16));
+    setEditEndDate(exhibition.endDate.slice(0, 16));
+    setEditError("");
+  };
+
+  const handleUpdateExhibition = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!editingExhibitionId) {
+      setEditError("Сначала выбери выставку для редактирования.");
+      return;
+    }
+
+    const payload: CreateExhibitionRequest = {
+      title: editTitle,
+      theme: editTheme,
+      description: editDescription,
+      submissionStartDate: editSubmissionStartDate,
+      submissionEndDate: editSubmissionEndDate,
+      startDate: editStartDate,
+      endDate: editEndDate,
+    };
+
+    try {
+      setEditError("");
+      await exhibitionsApi.update(editingExhibitionId, payload);
+      await loadData();
+      alert("Выставка обновлена.");
+    } catch {
+      setEditError("Не удалось обновить выставку.");
+    }
+  };
+
   return (
-    <section>
-      <div className="section-header">
+    <section className="page-section">
+      <div className="section-heading">
         <h1>Админ-панель</h1>
         <p>Управление выставками, заявками и опубликованными работами.</p>
       </div>
@@ -112,7 +174,7 @@ export function AdminPage() {
       <section className="section-block">
         <h2>Создать выставку</h2>
 
-        <form className="admin-form" onSubmit={handleCreateExhibition}>
+        <form className="auth-form large-form" onSubmit={handleCreateExhibition}>
           <input
             type="text"
             placeholder="Название выставки"
@@ -120,6 +182,7 @@ export function AdminPage() {
             onChange={(e) => setTitle(e.target.value)}
             required
           />
+
           <input
             type="text"
             placeholder="Тема выставки"
@@ -127,6 +190,7 @@ export function AdminPage() {
             onChange={(e) => setTheme(e.target.value)}
             required
           />
+
           <textarea
             placeholder="Описание выставки"
             value={description}
@@ -134,6 +198,7 @@ export function AdminPage() {
             required
             rows={4}
           />
+
           <label>
             Начало приёма заявок
             <input
@@ -143,6 +208,7 @@ export function AdminPage() {
               required
             />
           </label>
+
           <label>
             Конец приёма заявок
             <input
@@ -152,6 +218,7 @@ export function AdminPage() {
               required
             />
           </label>
+
           <label>
             Начало выставки
             <input
@@ -161,6 +228,7 @@ export function AdminPage() {
               required
             />
           </label>
+
           <label>
             Конец выставки
             <input
@@ -175,6 +243,103 @@ export function AdminPage() {
 
           <button type="submit">Создать выставку</button>
         </form>
+      </section>
+
+      <section className="section-block">
+        <h2>Редактировать выставку</h2>
+
+        {exhibitions.length === 0 ? (
+          <p>Выставок пока нет.</p>
+        ) : (
+          <div className="card-grid">
+            {exhibitions.map((exhibition) => (
+              <article className="card" key={exhibition.id}>
+                <div className="card-body">
+                  <h3>{exhibition.title}</h3>
+                  <p className="muted">{exhibition.theme}</p>
+                  <p>{exhibition.description}</p>
+                  <p className="muted">Статус: {exhibition.status}</p>
+
+                  <button onClick={() => startEditExhibition(exhibition)}>
+                    Редактировать
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+
+        {editingExhibitionId && (
+          <form className="auth-form large-form" onSubmit={handleUpdateExhibition}>
+            <input
+              type="text"
+              placeholder="Название выставки"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              required
+            />
+
+            <input
+              type="text"
+              placeholder="Тема выставки"
+              value={editTheme}
+              onChange={(e) => setEditTheme(e.target.value)}
+              required
+            />
+
+            <textarea
+              placeholder="Описание выставки"
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              required
+              rows={4}
+            />
+
+            <label>
+              Начало приёма заявок
+              <input
+                type="datetime-local"
+                value={editSubmissionStartDate}
+                onChange={(e) => setEditSubmissionStartDate(e.target.value)}
+                required
+              />
+            </label>
+
+            <label>
+              Конец приёма заявок
+              <input
+                type="datetime-local"
+                value={editSubmissionEndDate}
+                onChange={(e) => setEditSubmissionEndDate(e.target.value)}
+                required
+              />
+            </label>
+
+            <label>
+              Начало выставки
+              <input
+                type="datetime-local"
+                value={editStartDate}
+                onChange={(e) => setEditStartDate(e.target.value)}
+                required
+              />
+            </label>
+
+            <label>
+              Конец выставки
+              <input
+                type="datetime-local"
+                value={editEndDate}
+                onChange={(e) => setEditEndDate(e.target.value)}
+                required
+              />
+            </label>
+
+            {editError && <p className="error-text">{editError}</p>}
+
+            <button type="submit">Сохранить изменения выставки</button>
+          </form>
+        )}
       </section>
 
       <section className="section-block">
@@ -193,16 +358,21 @@ export function AdminPage() {
                   alt={submission.title}
                   className="card-image"
                 />
+
                 <div className="card-body">
                   <h3>{submission.title}</h3>
+
                   <p className="muted">
                     Автор: {submission.userName} ({submission.userEmail})
                   </p>
+
                   <p className="muted">
                     Выставка: {submission.exhibitionTitle}
                   </p>
+
                   <p className="muted">Статус: {submission.status}</p>
                   <p>{submission.description}</p>
+
                   <p className="muted">
                     Отправлено: {formatDate(submission.createdAt)}
                   </p>
@@ -229,6 +399,7 @@ export function AdminPage() {
                       >
                         Одобрить
                       </button>
+
                       <button
                         className="danger-button"
                         onClick={() => handleReview(submission.id, false)}
@@ -260,12 +431,16 @@ export function AdminPage() {
                   alt={artwork.title}
                   className="card-image"
                 />
+
                 <div className="card-body">
                   <h3>{artwork.title}</h3>
+
                   <p className="muted">
                     Автор: {artwork.authorName} ({artwork.authorEmail})
                   </p>
+
                   <p className="muted">Выставка: {artwork.exhibitionTitle}</p>
+
                   <p className="muted">
                     Статус: {artwork.isHidden ? "Скрыта" : "Отображается"}
                   </p>

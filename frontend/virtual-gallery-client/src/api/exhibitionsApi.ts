@@ -38,7 +38,9 @@ export const exhibitionsApi = {
   },
 
   getCalendar: async () => {
-    const response = await http.get<ExhibitionCalendarItem[]>("/exhibitions/calendar");
+    const response = await http.get<ExhibitionCalendarItem[]>(
+      "/exhibitions/calendar"
+    );
     return response.data;
   },
 
@@ -48,12 +50,19 @@ export const exhibitionsApi = {
   },
 
   getVirtualRoom: async (id: string) => {
-    const response = await http.get<VirtualRoomData>(`/exhibitions/${id}/virtual-room`);
+    const response = await http.get<VirtualRoomData>(
+      `/exhibitions/${id}/virtual-room`
+    );
     return response.data;
   },
 
   create: async (payload: CreateExhibitionRequest) => {
     const response = await http.post<Exhibition>("/exhibitions", payload);
+    return response.data;
+  },
+
+  update: async (id: string, payload: CreateExhibitionRequest) => {
+    const response = await http.put<Exhibition>(`/exhibitions/${id}`, payload);
     return response.data;
   },
 };

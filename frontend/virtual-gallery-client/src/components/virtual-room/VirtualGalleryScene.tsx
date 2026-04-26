@@ -1,4 +1,4 @@
-import { Canvas, type ThreeEvent, useFrame, useLoader, useThree } from "@react-three/fiber";
+import { Canvas, type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { VirtualRoomArtwork } from "../../types/virtualRoom";
@@ -84,7 +84,9 @@ function CameraController() {
     direction.current.y = 0;
     direction.current.normalize();
 
-    right.current.crossVectors(direction.current, new THREE.Vector3(0, 1, 0)).normalize();
+    right.current
+      .crossVectors(direction.current, new THREE.Vector3(0, 1, 0))
+      .normalize();
 
     const moveVector = new THREE.Vector3();
 
@@ -122,35 +124,123 @@ function CameraController() {
 
 function RoomShell() {
   return (
-    <group>
+    <>
+      <ambientLight intensity={1.2} />
+      <directionalLight position={[0, 7, 4]} intensity={1.5} castShadow />
+      <pointLight position={[0, 6, 0]} intensity={1.1} />
+      <pointLight position={[-8, 5, -5]} intensity={0.7} />
+      <pointLight position={[8, 5, 5]} intensity={0.7} />
+
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[ROOM_WIDTH, ROOM_DEPTH]} />
-        <meshStandardMaterial color="#a08f7d" roughness={0.95} />
+        <meshStandardMaterial color="#d9d4cb" />
       </mesh>
 
       <mesh position={[0, ROOM_HEIGHT / 2, -ROOM_DEPTH / 2]} receiveShadow>
         <planeGeometry args={[ROOM_WIDTH, ROOM_HEIGHT]} />
-        <meshStandardMaterial color="#e9e2d6" />
+        <meshStandardMaterial color="#f3efe8" />
       </mesh>
 
-      <mesh position={[0, ROOM_HEIGHT / 2, ROOM_DEPTH / 2]} rotation={[0, Math.PI, 0]} receiveShadow>
+      <mesh
+        position={[0, ROOM_HEIGHT / 2, ROOM_DEPTH / 2]}
+        rotation={[0, Math.PI, 0]}
+        receiveShadow
+      >
         <planeGeometry args={[ROOM_WIDTH, ROOM_HEIGHT]} />
-        <meshStandardMaterial color="#ece6db" />
+        <meshStandardMaterial color="#f3efe8" />
       </mesh>
 
-      <mesh position={[ROOM_WIDTH / 2, ROOM_HEIGHT / 2, 0]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
+      <mesh
+        position={[ROOM_WIDTH / 2, ROOM_HEIGHT / 2, 0]}
+        rotation={[0, -Math.PI / 2, 0]}
+        receiveShadow
+      >
         <planeGeometry args={[ROOM_DEPTH, ROOM_HEIGHT]} />
-        <meshStandardMaterial color="#ddd3c6" />
+        <meshStandardMaterial color="#f3efe8" />
       </mesh>
 
-      <mesh position={[-ROOM_WIDTH / 2, ROOM_HEIGHT / 2, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+      <mesh
+        position={[-ROOM_WIDTH / 2, ROOM_HEIGHT / 2, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+        receiveShadow
+      >
         <planeGeometry args={[ROOM_DEPTH, ROOM_HEIGHT]} />
-        <meshStandardMaterial color="#ddd3c6" />
+        <meshStandardMaterial color="#f3efe8" />
       </mesh>
 
       <mesh position={[0, ROOM_HEIGHT, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[ROOM_WIDTH, ROOM_DEPTH]} />
-        <meshStandardMaterial color="#f7f2ea" side={THREE.DoubleSide} />
+        <meshStandardMaterial color="#faf8f3" side={THREE.DoubleSide} />
+      </mesh>
+    </>
+  );
+}
+
+function PaintingImage({
+  imageUrl,
+  hovered,
+}: {
+  imageUrl: string;
+  hovered: boolean;
+}) {
+  const [texture, setTexture] = useState<THREE.Texture | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let disposed = false;
+    let currentTexture: THREE.Texture | null = null;
+
+    const loader = new THREE.TextureLoader();
+
+    loader.load(
+      imageUrl,
+      (loadedTexture) => {
+        if (disposed) {
+          loadedTexture.dispose();
+          return;
+        }
+
+        loadedTexture.colorSpace = THREE.SRGBColorSpace;
+        currentTexture = loadedTexture;
+        setTexture(loadedTexture);
+        setFailed(false);
+      },
+      undefined,
+      () => {
+        if (!disposed) {
+          setTexture(null);
+          setFailed(true);
+        }
+      }
+    );
+
+    return () => {
+      disposed = true;
+      if (currentTexture) {
+        currentTexture.dispose();
+      }
+    };
+  }, [imageUrl]);
+
+  if (texture && !failed) {
+    return (
+      <mesh>
+        <planeGeometry args={[PAINTING_WIDTH, PAINTING_HEIGHT]} />
+        <meshStandardMaterial map={texture} />
+      </mesh>
+    );
+  }
+
+  return (
+    <group>
+      <mesh>
+        <planeGeometry args={[PAINTING_WIDTH, PAINTING_HEIGHT]} />
+        <meshStandardMaterial color={hovered ? "#d8cec1" : "#cfc4b5"} />
+      </mesh>
+
+      <mesh position={[0, 0, 0.01]}>
+        <planeGeometry args={[PAINTING_WIDTH * 0.86, PAINTING_HEIGHT * 0.78]} />
+        <meshStandardMaterial color={hovered ? "#eee8dd" : "#e7e0d4"} />
       </mesh>
     </group>
   );
@@ -166,11 +256,6 @@ function PaintingFrame({
   onHover?: (artwork: VirtualRoomArtwork | null) => void;
 }) {
   const [hovered, setHovered] = useState(false);
-  const texture = useLoader(THREE.TextureLoader, artwork.imageUrl);
-
-  useEffect(() => {
-    texture.colorSpace = THREE.SRGBColorSpace;
-  }, [texture]);
 
   const handlePointerOver = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation();
@@ -179,7 +264,8 @@ function PaintingFrame({
     document.body.style.cursor = "pointer";
   };
 
-  const handlePointerOut = () => {
+  const handlePointerOut = (event: ThreeEvent<PointerEvent>) => {
+    event.stopPropagation();
     setHovered(false);
     onHover?.(null);
     document.body.style.cursor = "default";
@@ -194,27 +280,21 @@ function PaintingFrame({
     <group
       position={[artwork.x, artwork.y, artwork.z]}
       rotation={[0, artwork.rotationY, 0]}
+      onPointerOver={handlePointerOver}
+      onPointerOut={handlePointerOut}
+      onClick={handleClick}
     >
-      <mesh
-        position={[0, 0, -0.04]}
-        castShadow
-        onPointerOver={handlePointerOver}
-        onPointerOut={handlePointerOut}
-        onClick={handleClick}
-      >
-        <boxGeometry args={[PAINTING_WIDTH + 0.24, PAINTING_HEIGHT + 0.24, 0.16]} />
-        <meshStandardMaterial color={hovered ? "#5f4ec9" : "#4f3f34"} metalness={0.1} roughness={0.7} />
+      <mesh position={[0, 0, -0.05]} castShadow>
+        <boxGeometry args={[PAINTING_WIDTH + 0.26, PAINTING_HEIGHT + 0.26, 0.14]} />
+        <meshStandardMaterial color={hovered ? "#6f5432" : "#5b4428"} />
       </mesh>
 
-      <mesh
-        castShadow
-        onPointerOver={handlePointerOver}
-        onPointerOut={handlePointerOut}
-        onClick={handleClick}
-      >
-        <planeGeometry args={[PAINTING_WIDTH, PAINTING_HEIGHT]} />
-        <meshStandardMaterial map={texture} />
+      <mesh position={[0, 0, 0.03]} castShadow>
+        <boxGeometry args={[PAINTING_WIDTH + 0.08, PAINTING_HEIGHT + 0.08, 0.05]} />
+        <meshStandardMaterial color={hovered ? "#eadfca" : "#ddd1bb"} />
       </mesh>
+
+      <PaintingImage imageUrl={artwork.imageUrl} hovered={hovered} />
     </group>
   );
 }
@@ -270,21 +350,14 @@ function SceneContent({
 }: VirtualGallerySceneProps) {
   const positionedArtworks = useMemo(() => createPaintingLayout(artworks), [artworks]);
 
+  useEffect(() => {
+    return () => {
+      document.body.style.cursor = "default";
+    };
+  }, []);
+
   return (
     <>
-      <color attach="background" args={["#d7d1c6"]} />
-      <fog attach="fog" args={["#d7d1c6", 18, 42]} />
-
-      <ambientLight intensity={1.2} />
-      <directionalLight
-        position={[8, 12, 6]}
-        intensity={1.6}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-      />
-      <pointLight position={[0, 6.5, 0]} intensity={1.4} />
-
       <CameraController />
       <RoomShell />
 
@@ -306,17 +379,19 @@ export function VirtualGalleryScene({
   onArtworkHover,
 }: VirtualGallerySceneProps) {
   return (
-    <div className="virtual-room-canvas-wrap">
-      <Canvas
-        shadows
-        camera={{ position: [0, 2, 9], fov: 70, near: 0.1, far: 100 }}
-      >
-        <SceneContent
-          artworks={artworks}
-          onArtworkSelect={onArtworkSelect}
-          onArtworkHover={onArtworkHover}
-        />
-      </Canvas>
-    </div>
+    <Canvas
+      shadows
+      camera={{ fov: 70, near: 0.1, far: 100 }}
+      gl={{ antialias: true }}
+      style={{ width: "100%", height: "100%" }}
+    >
+      <color attach="background" args={["#f5f1e8"]} />
+      <fog attach="fog" args={["#f5f1e8", 18, 42]} />
+      <SceneContent
+        artworks={artworks}
+        onArtworkSelect={onArtworkSelect}
+        onArtworkHover={onArtworkHover}
+      />
+    </Canvas>
   );
 }

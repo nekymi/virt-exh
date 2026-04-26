@@ -41,17 +41,20 @@ export function ProfilePage() {
   };
 
   return (
-    <section>
-      <div className="details-card">
-        <p className="eyebrow">Личный кабинет</p>
-        <h1>{user?.name}</h1>
-        <p className="muted">{user?.email}</p>
+    <section className="page-section">
+      <div className="section-heading">
+        <h1>Личный кабинет</h1>
+        <p>
+          <strong>{user?.name}</strong>
+          <br />
+          {user?.email}
+        </p>
+      </div>
 
-        <div className="hero-actions">
-          <Link to="/submit" className="primary-link">
-            Подать новую работу
-          </Link>
-        </div>
+      <div className="hero-actions">
+        <Link to="/submit" className="nav-link">
+          Подать новую работу
+        </Link>
       </div>
 
       <section className="section-block">
@@ -72,11 +75,10 @@ export function ProfilePage() {
                   alt={submission.title}
                   className="card-image"
                 />
+
                 <div className="card-body">
                   <h3>{submission.title}</h3>
-                  <p className="muted">
-                    Выставка: {submission.exhibitionTitle}
-                  </p>
+                  <p className="muted">Выставка: {submission.exhibitionTitle}</p>
                   <p className="muted">Статус: {submission.status}</p>
                   <p>{submission.description}</p>
                   <p className="muted">
@@ -99,6 +101,13 @@ export function ProfilePage() {
 
                   {submission.status === "Pending" && (
                     <div className="hero-actions">
+                      <Link
+                        to={`/submissions/${submission.id}/edit`}
+                        className="approve-button"
+                      >
+                        Редактировать
+                      </Link>
+
                       <button
                         className="danger-button"
                         onClick={() => handleDelete(submission.id)}

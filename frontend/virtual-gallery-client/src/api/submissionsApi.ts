@@ -11,6 +11,11 @@ export const submissionsApi = {
     return response.data;
   },
 
+  update: async (id: string, payload: CreateSubmissionRequest) => {
+    const response = await http.put<Submission>(`/submissions/${id}`, payload);
+    return response.data;
+  },
+
   getMy: async () => {
     const response = await http.get<Submission[]>("/submissions/my");
     return response.data;
@@ -31,7 +36,10 @@ export const submissionsApi = {
   },
 
   review: async (id: string, payload: ReviewSubmissionRequest) => {
-    const response = await http.post<Submission>(`/submissions/${id}/review`, payload);
+    const response = await http.post<Submission>(
+      `/submissions/${id}/review`,
+      payload
+    );
     return response.data;
   },
 };

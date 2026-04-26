@@ -134,6 +134,65 @@ public class SubmissionsController : ControllerBase
         return Ok(MapSubmissionToDto(submission));
     }
 
+[Authorize]
+[HttpPut("{id:guid}")]
+public async Task<ActionResult<SubmissionResponseDto>> Update(Guid id, [FromBody] UpdateSubmissionRequestDto request)
+{
+    var userId = GetCurrentUserId();
+    if (userId is null)
+        return Unauthorized();
+
+    var submission = await _dbContext.Submissions
+        .Include(s => s.SubmissionTags)
+        .FirstOrDefaultAsync(s => s.Id == id);
+
+    if (submission is null)
+        return NotFound(new { message = "Заявка не найдена." });
+
+    if (submission.UserId != userId.Value)
+        return Forbid();
+
+    if (submission.Status != SubmissionStatus.Pending)
+        return BadRequest(new { message = "Редактировать можно только заявку со статусом Pending." });
+
+    var exhibition = await _dbContext.Exhibitions.FirstOrDefaultAsync(e => e.Id == request.ExhibitionId);
+    if (exhibition is null)
+        return BadRequest(new { message = "Выставка не найдена." });
+
+    var now = DateTime.UtcNow;
+    if (now < exhibition.SubmissionStartDate || now > exhibition.SubmissionEndDate)
+        return BadRequest(new { message = "Приём заявок на эту выставку сейчас закрыт." });
+
+    submission.Title = request.Title.Trim();
+    submission.Description = request.Description.Trim();
+    submission.Year = request.Year;
+    submission.ImageUrl = request.ImageUrl.Trim();
+    submission.ExhibitionId = request.ExhibitionId;
+
+    _dbContext.SubmissionTags.RemoveRange(submission.SubmissionTags);
+
+    var tags = await _tagService.GetOrCreateTagsAsync(request.Tags);
+    foreach (var tag in tags)
+    {
+        submission.SubmissionTags.Add(new SubmissionTag
+        {
+            SubmissionId = submission.Id,
+            TagId = tag.Id
+        });
+    }
+
+    await _dbContext.SaveChangesAsync();
+
+    var updated = await _dbContext.Submissions
+        .Include(s => s.User)
+        .Include(s => s.Exhibition)
+        .Include(s => s.SubmissionTags)
+        .ThenInclude(st => st.Tag)
+        .FirstAsync(s => s.Id == submission.Id);
+
+    return Ok(MapSubmissionToDto(updated));
+}
+
     [Authorize]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)

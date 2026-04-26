@@ -18,7 +18,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<ITagService, TagService>();
+builder.Services.AddScoped<TagService>();
 
 builder.Services.AddCors(options =>
 {
@@ -78,11 +78,10 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseStaticFiles();
+
 app.MapControllers();
 
-app.MapGet("/", () => Results.Ok(new
-{
-    message = "VirtualGallery API is running"
-}));
+app.MapGet("/", () => Results.Ok(new { message = "VirtualGallery API is running" }));
 
 app.Run();
