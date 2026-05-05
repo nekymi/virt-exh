@@ -3284,11 +3284,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\virt-exh\\backend\\VirtualGallery.Api\\VirtualGallery.Api.csproj",
+      "projectUniqueName": "C:\\virt-exh\\virt-exh\\backend\\VirtualGallery.Api\\VirtualGallery.Api.csproj",
       "projectName": "VirtualGallery.Api",
-      "projectPath": "C:\\virt-exh\\backend\\VirtualGallery.Api\\VirtualGallery.Api.csproj",
+      "projectPath": "C:\\virt-exh\\virt-exh\\backend\\VirtualGallery.Api\\VirtualGallery.Api.csproj",
       "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-      "outputPath": "C:\\virt-exh\\backend\\VirtualGallery.Api\\obj\\",
+      "outputPath": "C:\\virt-exh\\virt-exh\\backend\\VirtualGallery.Api\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",

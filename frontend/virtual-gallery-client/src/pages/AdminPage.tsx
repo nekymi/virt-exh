@@ -10,6 +10,38 @@ import type { Submission } from "../types/submission";
 import type { Exhibition } from "../types/exhibition";
 import { formatDate } from "../utils/formatDate";
 
+function getExhibitionStatusLabel(status?: string) {
+  if (!status) {
+    return "Статус не указан";
+  }
+
+  if (status === "Open" || status === "Active" || status === "Приём заявок открыт") {
+    return "Приём заявок открыт";
+  }
+
+  if (status === "Closed" || status === "Finished") {
+    return "Завершена";
+  }
+
+  if (status === "Draft" || status === "Upcoming") {
+    return "Запланирована";
+  }
+
+  return status;
+}
+
+function getExhibitionStatusClass(status?: string) {
+  if (status === "Closed" || status === "Finished") {
+    return "status-closed";
+  }
+
+  if (status === "Draft" || status === "Upcoming") {
+    return "status-draft";
+  }
+
+  return "";
+}
+
 export function AdminPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [artworks, setArtworks] = useState<Artwork[]>([]);
@@ -39,13 +71,11 @@ export function AdminPage() {
     try {
       setLoading(true);
 
-      const [submissionsData, artworksData, exhibitionsData] = await Promise.all(
-        [
-          submissionsApi.getAll(),
-          adminArtworksApi.getAll(),
-          exhibitionsApi.getAll(),
-        ]
-      );
+      const [submissionsData, artworksData, exhibitionsData] = await Promise.all([
+        submissionsApi.getAll(),
+        adminArtworksApi.getAll(),
+        exhibitionsApi.getAll(),
+      ]);
 
       setSubmissions(submissionsData);
       setArtworks(artworksData);
@@ -62,7 +92,7 @@ export function AdminPage() {
   const handleReview = async (id: string, approve: boolean) => {
     const adminComment = window.prompt(
       approve
-        ? "Комментарий администратора (необязательно):"
+        ? "Комментарий администратора, если он нужен:"
         : "Укажите причину отклонения:"
     );
 
@@ -107,6 +137,7 @@ export function AdminPage() {
 
     try {
       setCreateError("");
+
       await exhibitionsApi.create(payload);
 
       setTitle("");
@@ -118,9 +149,10 @@ export function AdminPage() {
       setEndDate("");
 
       await loadData();
+
       alert("Выставка создана.");
     } catch {
-      setCreateError("Не удалось создать выставку. Проверь даты и данные.");
+      setCreateError("Не удалось создать выставку. Проверь даты и заполненные поля.");
     }
   };
 
@@ -133,6 +165,18 @@ export function AdminPage() {
     setEditSubmissionEndDate(exhibition.submissionEndDate.slice(0, 16));
     setEditStartDate(exhibition.startDate.slice(0, 16));
     setEditEndDate(exhibition.endDate.slice(0, 16));
+    setEditError("");
+  };
+
+  const cancelEditExhibition = () => {
+    setEditingExhibitionId("");
+    setEditTitle("");
+    setEditTheme("");
+    setEditDescription("");
+    setEditSubmissionStartDate("");
+    setEditSubmissionEndDate("");
+    setEditStartDate("");
+    setEditEndDate("");
     setEditError("");
   };
 
@@ -156,8 +200,10 @@ export function AdminPage() {
 
     try {
       setEditError("");
+
       await exhibitionsApi.update(editingExhibitionId, payload);
       await loadData();
+
       alert("Выставка обновлена.");
     } catch {
       setEditError("Не удалось обновить выставку.");
@@ -165,10 +211,10 @@ export function AdminPage() {
   };
 
   return (
-    <section className="page-section">
-      <div className="section-heading">
+    <section className="page-section admin-page">
+      <div className="admin-page-header">
         <h1>Админ-панель</h1>
-        <p>Управление выставками, заявками и опубликованными работами.</p>
+        <p>Управление выставками, заявками участников и опубликованными работами.</p>
       </div>
 
       <section className="section-block">
@@ -249,20 +295,41 @@ export function AdminPage() {
         <h2>Редактировать выставку</h2>
 
         {exhibitions.length === 0 ? (
-          <p>Выставок пока нет.</p>
+          <p className="muted">Выставок пока нет.</p>
         ) : (
-          <div className="card-grid">
+          <div className="admin-exhibitions-list">
             {exhibitions.map((exhibition) => (
-              <article className="card" key={exhibition.id}>
-                <div className="card-body">
-                  <h3>{exhibition.title}</h3>
-                  <p className="muted">{exhibition.theme}</p>
-                  <p>{exhibition.description}</p>
-                  <p className="muted">Статус: {exhibition.status}</p>
+              <article className="admin-exhibition-card" key={exhibition.id}>
+                <h3 className="admin-exhibition-card-title">
+                  {exhibition.title}
+                </h3>
 
-                  <button onClick={() => startEditExhibition(exhibition)}>
-                    Редактировать
-                  </button>
+                <p className="admin-exhibition-card-theme">
+                  {exhibition.theme}
+                </p>
+
+                <p className="admin-exhibition-card-description">
+                  {exhibition.description}
+                </p>
+
+                <div className="admin-exhibition-card-footer">
+                  <span
+                    className={`admin-exhibition-status ${getExhibitionStatusClass(
+                      exhibition.status
+                    )}`}
+                  >
+                    {getExhibitionStatusLabel(exhibition.status)}
+                  </span>
+
+                  <div className="admin-exhibition-actions">
+                    <button
+                      type="button"
+                      className="admin-edit-button"
+                      onClick={() => startEditExhibition(exhibition)}
+                    >
+                      Редактировать
+                    </button>
+                  </div>
                 </div>
               </article>
             ))}
@@ -271,6 +338,8 @@ export function AdminPage() {
 
         {editingExhibitionId && (
           <form className="auth-form large-form" onSubmit={handleUpdateExhibition}>
+            <h2>Изменение выставки</h2>
+
             <input
               type="text"
               placeholder="Название выставки"
@@ -337,7 +406,17 @@ export function AdminPage() {
 
             {editError && <p className="error-text">{editError}</p>}
 
-            <button type="submit">Сохранить изменения выставки</button>
+            <div className="hero-actions">
+              <button type="submit">Сохранить изменения</button>
+
+              <button
+                type="button"
+                className="admin-secondary-button"
+                onClick={cancelEditExhibition}
+              >
+                Отмена
+              </button>
+            </div>
           </form>
         )}
       </section>
@@ -346,9 +425,9 @@ export function AdminPage() {
         <h2>Заявки пользователей</h2>
 
         {loading ? (
-          <p>Загрузка заявок...</p>
+          <p className="muted">Загрузка заявок...</p>
         ) : submissions.length === 0 ? (
-          <p>Заявок пока нет.</p>
+          <p className="muted">Заявок пока нет.</p>
         ) : (
           <div className="card-grid">
             {submissions.map((submission) => (
@@ -394,6 +473,7 @@ export function AdminPage() {
                   {submission.status === "Pending" && (
                     <div className="hero-actions">
                       <button
+                        type="button"
                         className="approve-button"
                         onClick={() => handleReview(submission.id, true)}
                       >
@@ -401,6 +481,7 @@ export function AdminPage() {
                       </button>
 
                       <button
+                        type="button"
                         className="danger-button"
                         onClick={() => handleReview(submission.id, false)}
                       >
@@ -419,9 +500,9 @@ export function AdminPage() {
         <h2>Опубликованные работы</h2>
 
         {loading ? (
-          <p>Загрузка работ...</p>
+          <p className="muted">Загрузка работ...</p>
         ) : artworks.length === 0 ? (
-          <p>Работ пока нет.</p>
+          <p className="muted">Работ пока нет.</p>
         ) : (
           <div className="card-grid">
             {artworks.map((artwork) => (
@@ -455,6 +536,7 @@ export function AdminPage() {
 
                   <div className="hero-actions">
                     <button
+                      type="button"
                       className={artwork.isHidden ? "approve-button" : "danger-button"}
                       onClick={() => handleToggleArtworkVisibility(artwork)}
                     >

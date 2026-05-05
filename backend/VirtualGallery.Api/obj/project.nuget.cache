@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "qrF3Ct98TF8=",
+  "dgSpecHash": "aX2elIn1sx0=",
   "success": true,
-  "projectFilePath": "C:\\virt-exh\\backend\\VirtualGallery.Api\\VirtualGallery.Api.csproj",
+  "projectFilePath": "C:\\virt-exh\\virt-exh\\backend\\VirtualGallery.Api\\VirtualGallery.Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Admin\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\Admin\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\8.0.8\\microsoft.aspnetcore.authentication.jwtbearer.8.0.8.nupkg.sha512",

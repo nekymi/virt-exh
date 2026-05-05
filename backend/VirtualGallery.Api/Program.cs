@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Net.Http.Headers;
 using VirtualGallery.Api.Data;
 using VirtualGallery.Api.Models;
 using VirtualGallery.Api.Services;
@@ -18,7 +19,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<TagService>();
+builder.Services.AddScoped<ITagService, TagService>();
 
 builder.Services.AddCors(options =>
 {
@@ -78,7 +79,13 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = context =>
+    {
+        context.Context.Response.Headers[HeaderNames.AccessControlAllowOrigin] = "*";
+    }
+});
 
 app.MapControllers();
 

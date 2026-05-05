@@ -1,0 +1,29 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\virt-exh\\virt-exh\\backend\\VirtualGallery.Api\\wwwroot\\uploads\\71fd6303-46fa-43a5-8fd4-8bfaa57c4f82.png",
+      "PackagePath": "staticwebassets\\uploads\\71fd6303-46fa-43a5-8fd4-8bfaa57c4f82.png"
+    },
+    {
+      "Id": "C:\\virt-exh\\virt-exh\\backend\\VirtualGallery.Api\\wwwroot\\uploads\\7fbc61a5-9d9c-4c4c-aa75-b552e97e9dcd.png",
+      "PackagePath": "staticwebassets\\uploads\\7fbc61a5-9d9c-4c4c-aa75-b552e97e9dcd.png"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.VirtualGallery.Api.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.VirtualGallery.Api.props",
+      "PackagePath": "build\\VirtualGallery.Api.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.VirtualGallery.Api.props",
+      "PackagePath": "buildMultiTargeting\\VirtualGallery.Api.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.VirtualGallery.Api.props",
+      "PackagePath": "buildTransitive\\VirtualGallery.Api.props"
+    }
+  ],
+  "ElementsToRemove": []
+}
